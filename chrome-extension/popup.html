@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoTrack Scanner</title>
+    <style>
+        body {
+            width: 380px;
+            min-height: 480px;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #ffffff;
+            color: #1f2937;
+        }
+        
+        .header {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 20px 24px 16px;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .logo {
+            width: 32px;
+            height: 32px;
+            background: #10B981;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logo svg {
+            width: 18px;
+            height: 18px;
+            fill: white;
+        }
+        
+        .brand-text {
+            flex: 1;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+        }
+        
+        .subtitle {
+            margin: 2px 0 0 0;
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        .content {
+            padding: 0;
+        }
+        
+        .scan-section {
+            padding: 24px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .scan-button {
+            width: 100%;
+            background: #10B981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .scan-button:hover {
+            background: #059669;
+        }
+        
+        .scan-button:active {
+            background: #047857;
+        }
+        
+        .scan-button:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            color: #9ca3af;
+        }
+        
+        .scan-icon {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .help-text {
+            font-size: 13px;
+            color: #6b7280;
+            text-align: center;
+            line-height: 1.4;
+            margin: 0;
+        }
+        
+        .loading {
+            display: none;
+            padding: 40px 24px;
+            text-align: center;
+        }
+        
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid #10B981;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .loading-text {
+            font-size: 14px;
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results {
+            display: none;
+            padding: 24px;
+        }
+        
+        .product-header {
+            margin-bottom: 20px;
+        }
+        
+        .product-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin: 0 0 4px 0;
+            line-height: 1.3;
+        }
+        
+        .scan-info {
+            font-size: 12px;
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        .score-section {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .score-display {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .score-circle {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .score-excellent { background: #10B981; }
+        .score-good { background: #3B82F6; }
+        .score-fair { background: #F59E0B; }
+        .score-poor { background: #EF4444; }
+        
+        .score-info {
+            flex: 1;
+        }
+        
+        .score-label {
+            font-size: 13px;
+            color: #6b7280;
+            margin: 0 0 2px 0;
+            font-weight: 500;
+        }
+        
+        .score-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin: 0;
+        }
+        
+        .score-bar {
+            width: 100%;
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .score-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+            border-radius: 2px;
+        }
+        
+        .insights {
+            margin-top: 20px;
+        }
+        
+        .insights-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin: 0 0 12px 0;
+        }
+        
+        .insight-item {
+            font-size: 13px;
+            color: #4b5563;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.4;
+        }
+        
+        .insight-bullet {
+            width: 4px;
+            height: 4px;
+            background: #10B981;
+            border-radius: 50%;
+            margin-top: 6px;
+            flex-shrink: 0;
+        }
+        
+        .error {
+            display: none;
+            margin: 24px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .error-text {
+            font-size: 14px;
+            color: #dc2626;
+            margin: 0;
+        }
+        
+        .action-bar {
+            padding: 16px 24px;
+            border-top: 1px solid #f3f4f6;
+            background: #f9fafb;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .track-button {
+            width: 100%;
+            background: #10B981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .track-button:hover {
+            background: #059669;
+        }
+        
+        .track-button:active {
+            background: #047857;
+        }
+        
+        .track-button:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            color: #9ca3af;
+        }
+        
+        .rescan-button {
+            width: 100%;
+            background: transparent;
+            color: #10B981;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .rescan-button:hover {
+            background: #f9fafb;
+            border-color: #10B981;
+        }
+        
+        /* AI Summary Section */
+        .ai-summary {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #f3f4f6;
+        }
+        
+        .summary-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #7c3aed;
+            margin: 0 0 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .summary-title::before {
+            content: "🤖";
+            font-size: 14px;
+        }
+        
+        .summary-subtitle {
+            font-size: 12px;
+            color: #6b7280;
+            margin: 0 0 16px 0;
+        }
+        
+        .summary-card {
+            background: #faf5ff;
+            border: 1px solid #e9d5ff;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .summary-stat {
+            text-align: center;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e9d5ff;
+        }
+        
+        .summary-stat-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #7c3aed;
+            margin: 0 0 2px 0;
+        }
+        
+        .summary-stat-label {
+            font-size: 11px;
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        .summary-text {
+            font-size: 13px;
+            color: #374151;
+            line-height: 1.5;
+            margin: 0 0 12px 0;
+        }
+        
+        .summary-events {
+            margin-top: 12px;
+        }
+        
+        .summary-events-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #7c3aed;
+            margin: 0 0 8px 0;
+        }
+        
+        .summary-event {
+            font-size: 11px;
+            color: #6b7280;
+            padding: 4px 8px;
+            background: white;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            border-left: 3px solid #a855f7;
+        }
+        
+        .summary-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 20px;
+            color: #7c3aed;
+            font-size: 13px;
+        }
+        
+        .summary-loading .spinner {
+            width: 16px;
+            height: 16px;
+            border-width: 1px;
+            border-color: #e9d5ff;
+            border-top-color: #7c3aed;
+        }
+        
+        .summary-empty {
+            text-align: center;
+            padding: 20px;
+            color: #6b7280;
+        }
+        
+        .summary-empty-icon {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 12px;
+            background: #faf5ff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e9d5ff;
+        }
+        
+        .summary-empty-text {
+            font-size: 13px;
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        .summary-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .view-full-summary {
+            flex: 1;
+            background: #7c3aed;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+        
+        .view-full-summary:hover {
+            background: #6d28d9;
+        }
+        
+        .generate-summary {
+            background: transparent;
+            color: #7c3aed;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        
+        .generate-summary:hover {
+            background: #faf5ff;
+            border-color: #7c3aed;
+        }
+
+        /* Recommendations Section */
+        .recommendations {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #f3f4f6;
+        }
+        
+        .recommendations-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin: 0 0 4px 0;
+        }
+        
+        .recommendations-subtitle {
+            font-size: 12px;
+            color: #6b7280;
+            margin: 0 0 16px 0;
+        }
+        
+        .recommendation-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.15s ease;
+        }
+        
+        .recommendation-item:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        
+        .recommendation-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .recommendation-score {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .rec-score-excellent { background: #10B981; }
+        .rec-score-good { background: #3B82F6; }
+        .rec-score-fair { background: #F59E0B; }
+        
+        .recommendation-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .recommendation-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 4px 0;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .recommendation-improvement {
+            font-size: 12px;
+            color: #059669;
+            font-weight: 500;
+            margin: 0;
+        }
+        
+        .recommendation-details {
+            font-size: 12px;
+            color: #6b7280;
+            margin: 8px 0 0 0;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .recommendation-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 8px;
+        }
+        
+        .recommendation-tag {
+            background: #dcfce7;
+            color: #166534;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        .recommendations-empty {
+            text-align: center;
+            padding: 24px 16px;
+            color: #6b7280;
+        }
+        
+        .recommendations-empty-icon {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 12px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .recommendations-empty-text {
+            font-size: 14px;
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        .recommendations-footer {
+            margin-top: 16px;
+        }
+        
+        .view-more-button {
+            width: 100%;
+            background: transparent;
+            color: #10B981;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .view-more-button:hover {
+            background: #f0fdf4;
+            border-color: #10B981;
+        }
+        
+        .recommendations-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 20px;
+            color: #6b7280;
+            font-size: 13px;
+        }
+        
+        .recommendations-loading .spinner {
+            width: 16px;
+            height: 16px;
+            border-width: 1px;
+        }
+        
+        /* Recommendation Actions */
+        .recommendation-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f1f5f9;
+        }
+        
+        .recommendation-link {
+            flex: 1;
+            background: #10B981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .recommendation-link:hover {
+            background: #059669;
+        }
+        
+        .recommendation-link:active {
+            background: #047857;
+        }
+        
+        .recommendation-more-sources {
+            background: transparent;
+            color: #6b7280;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        
+        .recommendation-more-sources:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        
+        .recommendation-item:hover .recommendation-actions {
+            opacity: 1;
+        }
+        
+        /* Clickable recommendation items */
+        .recommendation-item[style*="cursor: pointer"]:hover {
+            background: #f0f9ff !important;
+            border-color: #bae6fd !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo-section">
+            <div class="logo">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+            </div>
+            <div class="brand-text">
+                <h1>EcoTrack</h1>
+                <div class="subtitle">AI-powered sustainability scanner</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="content">
+        <div class="scan-section" id="scan-section" style="display: none;">
+            <button class="scan-button" id="scan-button">
+                <svg class="scan-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/>
+                </svg>
+                Analyze This Page
+            </button>
+            <p class="help-text">
+                Click to analyze this page for eco-friendliness and sustainability insights
+            </p>
+        </div>
+        
+        <div class="loading" id="loading" style="display: block;">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p class="loading-text">Analyzing this page...</p>
+            </div>
+        </div>
+        
+        <div class="error" id="error">
+            <p class="error-text" id="error-message">Something went wrong. Please try again.</p>
+        </div>
+        
+        <div class="results" id="results">
+            <div class="product-header">
+                <h2 class="product-name" id="product-name">Product Name</h2>
+                <p class="scan-info">Scanned just now</p>
+            </div>
+            
+            <div class="score-section">
+                <div class="score-display">
+                    <div class="score-circle" id="score-circle">85</div>
+                    <div class="score-info">
+                        <p class="score-label">Eco-Friendliness Score</p>
+                        <p class="score-text" id="score-text">Excellent</p>
+                    </div>
+                </div>
+                <div class="score-bar">
+                    <div class="score-fill" id="score-fill"></div>
+                </div>
+            </div>
+            
+            <div class="insights">
+                <h3 class="insights-title">Sustainability Insights</h3>
+                <div id="insights-list">
+                    <!-- Insights will be populated here -->
+                </div>
+            </div>
+            
+            <!-- AI Summary Section -->
+            <div class="ai-summary" id="ai-summary" style="display: none;">
+                <h3 class="summary-title">AI Lifecycle Summary</h3>
+                <div class="summary-subtitle">
+                    Smart insights from your product journey
+                </div>
+                <div id="summary-content">
+                    <!-- Summary will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Recommendations Section -->
+            <div class="recommendations" id="recommendations" style="display: none;">
+                <h3 class="recommendations-title">Better Alternatives</h3>
+                <div class="recommendations-subtitle">
+                    More eco-friendly products similar to this one
+                </div>
+                <div id="recommendations-list">
+                    <!-- Recommendations will be populated here -->
+                </div>
+                <div class="recommendations-footer">
+                    <button class="view-more-button" id="view-more-button" style="display: none;">
+                        View More Alternatives
+                    </button>
+                </div>
+            </div>
+            
+            <div class="action-bar">
+                <button class="track-button" id="track-button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                    </svg>
+                    Track This Product
+                </button>
+                <button class="rescan-button" id="rescan-button">Analyze Another Page</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>

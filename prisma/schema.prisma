@@ -1,0 +1,243 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Authentication fields (all optional)
+  email      String? @unique
+  password   String? @db.VarChar(255) // bcrypt hash
+  singpassId String? @unique @map("singpass_id")
+  
+  // Basic user info
+  name   String?
+  avatar String?
+  
+  // Telegram integration
+  telegramId       String? @unique @map("telegram_id") // Telegram user ID
+  telegramUsername String? @map("telegram_username") // Telegram username
+  telegramLinkedAt DateTime? @map("telegram_linked_at") // When Telegram was linked
+  
+  // Relations
+  trackedProducts ProductTracking[]
+  lifecycleSteps ProductLifecycleStep[]
+  lifecycleSummaries ProductLifecycleSummary[]
+  
+  @@map("users")
+}
+
+model Product {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Canonical product identification
+  canonicalName        String @map("canonical_name")
+  canonicalDescription String @map("canonical_description")
+  
+  // Entity disambiguation via embeddings
+  nameEmbedding        String? @map("name_embedding") @db.Text // JSON array as text
+  descriptionEmbedding String? @map("description_embedding") @db.Text // JSON array as text
+  
+  // Consolidated sustainability data (best/latest)
+  ecoScore      Int?      @map("eco_score")
+  category      String?
+  materials     String[]  // All unique materials found
+  certifications String[] // All unique certifications found
+  
+  // Comprehensive lifecycle insights
+  lifecycleInsights Json? @map("lifecycle_insights") @db.JsonB
+  
+  // Product image
+  primaryImageUrl String? @map("primary_image_url") @db.Text
+  
+  // Source tracking and metadata
+  scanCount       Int       @default(1) @map("scan_count")
+  firstDiscovered DateTime  @default(now()) @map("first_discovered")
+  confidence      Float     @default(1.0) // Overall confidence in data
+  
+  // Relations
+  scans ProductScan[]
+  tracking ProductTracking[]
+  lifecycleSteps ProductLifecycleStep[]
+  lifecycleSummaries ProductLifecycleSummary[]
+  
+  @@map("products")
+  @@index([canonicalName])
+  @@index([ecoScore])
+  @@index([category])
+}
+
+model ProductScan {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  
+  // Link to canonical product
+  productId String @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Source information
+  sourceUrl        String? @map("source_url")
+  sourceType       String  @default("web_scan") @map("source_type") // web_scan, api, manual, etc.
+  contentHash      String? @map("content_hash") // Hash of page content for exact duplicates
+  
+  // Raw extracted data from this specific scan
+  rawName          String @map("raw_name")
+  rawDescription   String @map("raw_description")
+  extractedContent Json   @map("extracted_content") @db.JsonB // Full content from scan
+  
+  // AI analysis results from this scan
+  aiAnalysis       Json   @map("ai_analysis") @db.JsonB // Raw Gemini response
+  ecoScore         Int?   @map("eco_score")
+  materials        String[]
+  certifications   String[]
+  insights         String[]
+  reasoning        String?
+  
+  // Scan metadata
+  confidence       Float  @default(1.0) // Confidence in this specific scan
+  processingTime   Int?   @map("processing_time") // milliseconds
+  
+  @@map("product_scans")
+  @@index([sourceUrl])
+  @@index([contentHash])
+  @@index([createdAt])
+  @@unique([contentHash]) // Prevent duplicate scans of exact same content
+}
+
+model ProductTracking {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Link to canonical product
+  productId String @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // User tracking this product (optional for now)
+  userId String? @map("user_id")
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Tracking metadata
+  sourceUrl    String? @map("source_url") // Where the user tracked it from
+  trackingName String? @map("tracking_name") // Custom name user gave it
+  notes        String? // User notes
+  
+  // Tracking preferences
+  priceAlerts     Boolean @default(false) @map("price_alerts")
+  stockAlerts     Boolean @default(false) @map("stock_alerts")
+  sustainabilityAlerts Boolean @default(false) @map("sustainability_alerts")
+  
+  // Status
+  isActive Boolean @default(true) @map("is_active")
+  
+  // Relations
+  lifecycleSteps ProductLifecycleStep[]
+  
+  @@map("product_tracking")
+  @@index([userId])
+  @@index([productId])
+  @@index([isActive])
+  @@index([productId, userId]) // Index for efficient lookups without uniqueness constraint
+}
+
+model ProductLifecycleStep {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  trackingId String @map("tracking_id")
+  tracking   ProductTracking @relation(fields: [trackingId], references: [id], onDelete: Cascade)
+  
+  productId String @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  userId String? @map("user_id")
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Lifecycle step details
+  stepType     String @map("step_type") // discovered, tracked, price_changed, sustainability_improved, alternative_found, purchased, disposed, etc.
+  title        String // Short description of the step
+  description  String? // Detailed description
+  
+  // Metadata
+  metadata Json? @db.JsonB // Flexible data for step-specific information
+  
+  // Impact tracking
+  ecoScoreBefore Int? @map("eco_score_before")
+  ecoScoreAfter  Int? @map("eco_score_after")
+  priceBefore    Float? @map("price_before")
+  priceAfter     Float? @map("price_after")
+  
+  // Source information
+  sourceUrl String? @map("source_url") // Where this step originated
+  sourceType String @default("system") @map("source_type") // system, user, api, extension, etc.
+  
+  // Visibility
+  isVisible Boolean @default(true) @map("is_visible") // Whether to show in timeline
+  priority  Int     @default(5) // Priority for ordering (1-10, higher = more important)
+  
+  @@map("product_lifecycle_steps")
+  @@index([trackingId])
+  @@index([productId])
+  @@index([userId])
+  @@index([stepType])
+  @@index([createdAt])
+}
+
+model ProductLifecycleSummary {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  productId String @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  userId String? @map("user_id") 
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Summary metadata
+  stepCountStart Int @map("step_count_start") // e.g., 1
+  stepCountEnd   Int @map("step_count_end")   // e.g., 50
+  totalStepsIncluded Int @map("total_steps_included")
+  
+  // AI-generated summary content
+  summary String @db.Text // Main summary text
+  keyEvents String[] @map("key_events") // Important events extracted
+  trends Json? @db.JsonB // Patterns, improvements, concerns
+  
+  // Summary metrics
+  ecoScoreChange Float? @map("eco_score_change")
+  majorMilestones String[] @map("major_milestones")
+  timeframe Json? @db.JsonB // Start/end dates of covered period
+  
+  // Processing metadata
+  aiModel String @default("gpt-4o-mini") @map("ai_model") // Which AI model was used
+  processingTime Int? @map("processing_time") // Time taken to generate summary in ms
+  confidence Float @default(1.0) // Confidence in the summary quality
+  
+  @@map("product_lifecycle_summaries")
+  @@index([productId])
+  @@index([userId])
+  @@index([stepCountEnd])
+  @@index([createdAt])
+}
