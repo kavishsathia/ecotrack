@@ -35,7 +35,7 @@ A comprehensive platform for tracking product lifecycles with sustainability ins
 
 ```bash
 git clone <repository-url>
-cd Life
+cd ecotrack
 npm install
 ```
 
