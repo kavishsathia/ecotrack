@@ -1,4 +1,4 @@
-# Life - Product Lifecycle Tracking Platform
+# EcoTrack - Your AI Sustainability Companion
 
 A comprehensive platform for tracking product lifecycles with sustainability insights, powered by AI analysis and multi-platform integration.
 
